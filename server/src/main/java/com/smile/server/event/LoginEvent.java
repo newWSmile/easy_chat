@@ -7,6 +7,8 @@ import com.smile.common.action.LoginRespAction;
 import com.smile.common.event.IEvent;
 import com.smile.server.connection.ConnectionPool;
 import com.smile.server.model.User;
+import com.smile.server.service.UserService;
+import com.smile.server.util.SpringContextUtil;
 import io.netty.channel.Channel;
 
 public class LoginEvent implements IEvent<Action,Action> {
@@ -18,10 +20,13 @@ public class LoginEvent implements IEvent<Action,Action> {
         System.out.println("received login action resp: " + loginReqAction);
 
         //根据手机号 ，密码查询用户
-
+        UserService userService = SpringContextUtil.getBean(UserService.class);
+        if (null == userService){
+            System.out.println("can not get userService ...");
+            return null;
+        }
+        User user = userService.findUser(loginReqAction.getMobile(), loginReqAction.getPassword());
         //返回登陆结果
-
-        User user = new User();
         LoginRespAction loginRespAction = new LoginRespAction();
         loginRespAction.setResult(false);
         if (null ==user){

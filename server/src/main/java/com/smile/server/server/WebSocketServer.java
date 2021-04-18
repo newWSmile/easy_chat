@@ -1,6 +1,12 @@
 package com.smile.server.server;
 
+import com.alibaba.fastjson.JSONObject;
+import com.smile.common.action.Action;
+import com.smile.common.action.ActionIdEnum;
+import com.smile.common.event.EventPool;
+import com.smile.common.event.IEvent;
 import com.smile.server.connection.ConnectionPool;
+import com.smile.server.event.LoginEvent;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -58,6 +64,7 @@ public class WebSocketServer {
     }
 
     public  void start(final Integer port) {
+        this.registerEvent();
         this.init();
         try {
             ChannelFuture channelFuture = bootstrap.bind(port).sync();
@@ -67,6 +74,10 @@ public class WebSocketServer {
             e.printStackTrace();
         }
 
+    }
+
+    private void registerEvent() {
+        EventPool.getInstance().registe(ActionIdEnum.ACTION_LOGIN_REQ.getAction(), new LoginEvent());
     }
 
 
@@ -95,7 +106,24 @@ public class WebSocketServer {
             TextWebSocketFrame textWebSocketFrame = ((TextWebSocketFrame) o);
             System.out.println("receive text :"+ textWebSocketFrame.text());
             channelHandlerContext.writeAndFlush(new TextWebSocketFrame("服务端返回: "+textWebSocketFrame.text()));
-
+            Action action;
+            try {
+                action = JSONObject.parseObject(textWebSocketFrame.text(), Action.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("transfer to object from json string failed. data: " + textWebSocketFrame.text());
+                return ;
+            }
+            IEvent<Action, Action> event = EventPool.getInstance().find(action.getAction());
+            if ( null == event ) {
+                System.out.println("no event found for key: " + action.getAction());
+                return ;
+            }
+            Action respAction = event.handle(action, channelHandlerContext.channel());
+            if ( null != respAction ) {
+                System.out.println("resp action: " + action);
+                channelHandlerContext.writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(respAction)));
+            }
 
         }
     }

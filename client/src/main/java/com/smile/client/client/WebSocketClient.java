@@ -130,6 +130,7 @@ public class WebSocketClient {
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("transfer to object from json string failed. data: " + textWebSocketFrame.text());
+                return;
             }
 
 
