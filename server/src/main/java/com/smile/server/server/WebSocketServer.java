@@ -1,5 +1,6 @@
 package com.smile.server.server;
 
+import com.smile.server.connection.ConnectionPool;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -11,7 +12,6 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.Setter;
-import org.springframework.stereotype.Service;
 
 public class WebSocketServer {
 
@@ -80,6 +80,7 @@ public class WebSocketServer {
         @Override
         public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
             System.out.println("connection closed with address:" + ctx.channel().remoteAddress());
+            ConnectionPool.getInstance().removeByChannelId(ctx.channel().id().asLongText());
         }
 
         @Override
